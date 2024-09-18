@@ -1,0 +1,1330 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html><head></head><body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div>
+
+
+
+<h1 class="title toc-ignore">Assessment 3_Final Submission</h1>
+<h4 class="author">Kenny Gunawan &amp; Ravidu Abeywardhana</h4>
+<h4 class="date">2023-06-05</h4>
+
+</div>
+
+
+<div class="section level1">
+<h1>Load the libraries and the dataset</h1>
+<pre class="r"><code>library (tidyverse)</code></pre>
+<pre><code>## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+## ✔ dplyr     1.1.1     ✔ readr     2.1.4
+## ✔ forcats   1.0.0     ✔ stringr   1.5.0
+## ✔ ggplot2   3.4.2     ✔ tibble    3.2.1
+## ✔ lubridate 1.9.2     ✔ tidyr     1.3.0
+## ✔ purrr     1.0.1     
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✖ dplyr::filter() masks stats::filter()
+## ✖ dplyr::lag()    masks stats::lag()
+## ℹ Use the ]8;;http://conflicted.r-lib.org/conflicted package]8;; to force all conflicts to become errors</code></pre>
+<pre class="r"><code>library (tidymodels)</code></pre>
+<pre><code>## ── Attaching packages ────────────────────────────────────── tidymodels 1.0.0 ──
+## ✔ broom        1.0.3     ✔ rsample      1.1.1
+## ✔ dials        1.1.0     ✔ tune         1.1.1
+## ✔ infer        1.0.4     ✔ workflows    1.1.3
+## ✔ modeldata    1.1.0     ✔ workflowsets 1.0.0
+## ✔ parsnip      1.1.0     ✔ yardstick    1.1.0
+## ✔ recipes      1.0.5     
+## ── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
+## ✖ scales::discard() masks purrr::discard()
+## ✖ dplyr::filter()   masks stats::filter()
+## ✖ recipes::fixed()  masks stringr::fixed()
+## ✖ dplyr::lag()      masks stats::lag()
+## ✖ yardstick::spec() masks readr::spec()
+## ✖ recipes::step()   masks stats::step()
+## • Search for functions across packages at https://www.tidymodels.org/find/</code></pre>
+<pre class="r"><code>library (janitor)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;janitor&#39;
+## 
+## The following objects are masked from &#39;package:stats&#39;:
+## 
+##     chisq.test, fisher.test</code></pre>
+<pre class="r"><code>library (dplyr)
+library (knitr)
+library (ggplot2)
+library (caret)</code></pre>
+<pre><code>## Loading required package: lattice
+## 
+## Attaching package: &#39;caret&#39;
+## 
+## The following objects are masked from &#39;package:yardstick&#39;:
+## 
+##     precision, recall, sensitivity, specificity
+## 
+## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     lift</code></pre>
+<pre class="r"><code>library (parsnip)
+library (tune)
+
+wind_turbine &lt;- readr::read_csv(&#39;https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-27/wind-turbine.csv&#39;)</code></pre>
+<pre><code>## Rows: 6698 Columns: 15
+## ── Column specification ────────────────────────────────────────────────────────
+## Delimiter: &quot;,&quot;
+## chr (8): province_territory, project_name, turbine_identifier, turbine_numbe...
+## dbl (7): objectid, total_project_capacity_mw, turbine_rated_capacity_k_w, ro...
+## 
+## ℹ Use `spec()` to retrieve the full column specification for this data.
+## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
+</div>
+<div class="section level1">
+<h1>Check whether any missing values observed in the dataset</h1>
+<pre class="r"><code>skimr::skim(wind_turbine)</code></pre>
+<table>
+<caption>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">wind_turbine</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">6698</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">15</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">8</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">7</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="30%"/>
+<col width="11%"/>
+<col width="16%"/>
+<col width="4%"/>
+<col width="4%"/>
+<col width="7%"/>
+<col width="10%"/>
+<col width="13%"/>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">province_territory</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">5</td>
+<td align="right">25</td>
+<td align="right">0</td>
+<td align="right">12</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">project_name</td>
+<td align="right">1</td>
+<td align="right">1.00</td>
+<td align="right">5</td>
+<td align="right">41</td>
+<td align="right">0</td>
+<td align="right">268</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">turbine_identifier</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">4</td>
+<td align="right">6</td>
+<td align="right">0</td>
+<td align="right">6683</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">turbine_number_in_project</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">3</td>
+<td align="right">7</td>
+<td align="right">0</td>
+<td align="right">4300</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">manufacturer</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">2</td>
+<td align="right">24</td>
+<td align="right">0</td>
+<td align="right">23</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">model</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">3</td>
+<td align="right">12</td>
+<td align="right">0</td>
+<td align="right">92</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">commissioning_date</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">4</td>
+<td align="right">14</td>
+<td align="right">0</td>
+<td align="right">35</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">notes</td>
+<td align="right">6064</td>
+<td align="right">0.09</td>
+<td align="right">20</td>
+<td align="right">196</td>
+<td align="right">0</td>
+<td align="right">27</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<colgroup>
+<col width="23%"/>
+<col width="8%"/>
+<col width="12%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="5%"/>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">objectid</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">3349.50</td>
+<td align="right">1933.69</td>
+<td align="right">1.00</td>
+<td align="right">1675.25</td>
+<td align="right">3349.50</td>
+<td align="right">5023.75</td>
+<td align="right">6698.00</td>
+<td align="left">▇▇▇▇▇</td>
+</tr>
+<tr class="even">
+<td align="left">total_project_capacity_mw</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">134.76</td>
+<td align="right">90.50</td>
+<td align="right">0.30</td>
+<td align="right">70.50</td>
+<td align="right">102.00</td>
+<td align="right">181.50</td>
+<td align="right">350.00</td>
+<td align="left">▆▇▅▂▂</td>
+</tr>
+<tr class="odd">
+<td align="left">turbine_rated_capacity_k_w</td>
+<td align="right">220</td>
+<td align="right">0.97</td>
+<td align="right">1967.31</td>
+<td align="right">605.93</td>
+<td align="right">65.00</td>
+<td align="right">1600.00</td>
+<td align="right">1880.00</td>
+<td align="right">2300.00</td>
+<td align="right">3750.00</td>
+<td align="left">▁▃▇▅▁</td>
+</tr>
+<tr class="even">
+<td align="left">rotor_diameter_m</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">88.62</td>
+<td align="right">16.45</td>
+<td align="right">15.00</td>
+<td align="right">80.00</td>
+<td align="right">90.00</td>
+<td align="right">100.00</td>
+<td align="right">141.00</td>
+<td align="left">▁▁▇▇▁</td>
+</tr>
+<tr class="odd">
+<td align="left">hub_height_m</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">83.34</td>
+<td align="right">14.44</td>
+<td align="right">24.50</td>
+<td align="right">80.00</td>
+<td align="right">80.00</td>
+<td align="right">92.00</td>
+<td align="right">132.00</td>
+<td align="left">▁▂▇▃▁</td>
+</tr>
+<tr class="even">
+<td align="left">latitude</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">46.76</td>
+<td align="right">3.27</td>
+<td align="right">42.00</td>
+<td align="right">43.98</td>
+<td align="right">46.67</td>
+<td align="right">49.17</td>
+<td align="right">64.49</td>
+<td align="left">▇▇▁▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">longitude</td>
+<td align="right">0</td>
+<td align="right">1.00</td>
+<td align="right">-83.03</td>
+<td align="right">17.59</td>
+<td align="right">-135.23</td>
+<td align="right">-84.41</td>
+<td align="right">-80.67</td>
+<td align="right">-67.85</td>
+<td align="right">-52.97</td>
+<td align="left">▁▂▁▇▅</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#Missing values are observed in the dataset, even almost all observations in the notes column are missing values. We need to clean it :)</code></pre>
+</div>
+<div class="section level1">
+<h1>Clean the dataset</h1>
+<pre class="r"><code>#Remove the notes column from the dataset and missing values in other column
+wind_turbine_cleaned &lt;- 
+  wind_turbine [, !(names(wind_turbine) == &quot;notes&quot;)] %&gt;%
+  na.omit()
+
+skimr::skim(wind_turbine_cleaned)</code></pre>
+<table>
+<caption>Data summary</caption>
+<tbody>
+<tr class="odd">
+<td align="left">Name</td>
+<td align="left">wind_turbine_cleaned</td>
+</tr>
+<tr class="even">
+<td align="left">Number of rows</td>
+<td align="left">6477</td>
+</tr>
+<tr class="odd">
+<td align="left">Number of columns</td>
+<td align="left">14</td>
+</tr>
+<tr class="even">
+<td align="left">_______________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Column type frequency:</td>
+<td align="left"></td>
+</tr>
+<tr class="even">
+<td align="left">character</td>
+<td align="left">7</td>
+</tr>
+<tr class="odd">
+<td align="left">numeric</td>
+<td align="left">7</td>
+</tr>
+<tr class="even">
+<td align="left">________________________</td>
+<td align="left"></td>
+</tr>
+<tr class="odd">
+<td align="left">Group variables</td>
+<td align="left">None</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: character</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col width="30%"/>
+<col width="11%"/>
+<col width="16%"/>
+<col width="4%"/>
+<col width="4%"/>
+<col width="7%"/>
+<col width="10%"/>
+<col width="13%"/>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">min</th>
+<th align="right">max</th>
+<th align="right">empty</th>
+<th align="right">n_unique</th>
+<th align="right">whitespace</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">province_territory</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">5</td>
+<td align="right">25</td>
+<td align="right">0</td>
+<td align="right">12</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">project_name</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">5</td>
+<td align="right">41</td>
+<td align="right">0</td>
+<td align="right">265</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">turbine_identifier</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">6</td>
+<td align="right">0</td>
+<td align="right">6477</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">turbine_number_in_project</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">7</td>
+<td align="right">0</td>
+<td align="right">4085</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">manufacturer</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">2</td>
+<td align="right">24</td>
+<td align="right">0</td>
+<td align="right">23</td>
+<td align="right">0</td>
+</tr>
+<tr class="even">
+<td align="left">model</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3</td>
+<td align="right">12</td>
+<td align="right">0</td>
+<td align="right">92</td>
+<td align="right">0</td>
+</tr>
+<tr class="odd">
+<td align="left">commissioning_date</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">4</td>
+<td align="right">14</td>
+<td align="right">0</td>
+<td align="right">35</td>
+<td align="right">0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Variable type: numeric</strong></p>
+<table>
+<colgroup>
+<col width="23%"/>
+<col width="8%"/>
+<col width="12%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="7%"/>
+<col width="5%"/>
+</colgroup>
+<thead>
+<tr class="header">
+<th align="left">skim_variable</th>
+<th align="right">n_missing</th>
+<th align="right">complete_rate</th>
+<th align="right">mean</th>
+<th align="right">sd</th>
+<th align="right">p0</th>
+<th align="right">p25</th>
+<th align="right">p50</th>
+<th align="right">p75</th>
+<th align="right">p100</th>
+<th align="left">hist</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">objectid</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">3345.70</td>
+<td align="right">1966.10</td>
+<td align="right">1.00</td>
+<td align="right">1621.00</td>
+<td align="right">3240.00</td>
+<td align="right">5079.00</td>
+<td align="right">6698.00</td>
+<td align="left">▇▇▇▇▇</td>
+</tr>
+<tr class="even">
+<td align="left">total_project_capacity_mw</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">131.65</td>
+<td align="right">89.82</td>
+<td align="right">0.30</td>
+<td align="right">69.00</td>
+<td align="right">101.20</td>
+<td align="right">179.00</td>
+<td align="right">350.00</td>
+<td align="left">▆▇▅▂▂</td>
+</tr>
+<tr class="odd">
+<td align="left">turbine_rated_capacity_k_w</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">1967.15</td>
+<td align="right">605.84</td>
+<td align="right">65.00</td>
+<td align="right">1600.00</td>
+<td align="right">1880.00</td>
+<td align="right">2300.00</td>
+<td align="right">3750.00</td>
+<td align="left">▁▃▇▅▁</td>
+</tr>
+<tr class="even">
+<td align="left">rotor_diameter_m</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">88.20</td>
+<td align="right">16.57</td>
+<td align="right">15.00</td>
+<td align="right">77.00</td>
+<td align="right">90.00</td>
+<td align="right">100.00</td>
+<td align="right">141.00</td>
+<td align="left">▁▁▇▆▁</td>
+</tr>
+<tr class="odd">
+<td align="left">hub_height_m</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">82.79</td>
+<td align="right">14.37</td>
+<td align="right">24.50</td>
+<td align="right">80.00</td>
+<td align="right">80.00</td>
+<td align="right">85.00</td>
+<td align="right">132.00</td>
+<td align="left">▁▂▇▂▁</td>
+</tr>
+<tr class="even">
+<td align="left">latitude</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">46.89</td>
+<td align="right">3.25</td>
+<td align="right">42.00</td>
+<td align="right">44.04</td>
+<td align="right">47.23</td>
+<td align="right">49.18</td>
+<td align="right">64.49</td>
+<td align="left">▇▇▁▁▁</td>
+</tr>
+<tr class="odd">
+<td align="left">longitude</td>
+<td align="right">0</td>
+<td align="right">1</td>
+<td align="right">-83.08</td>
+<td align="right">17.89</td>
+<td align="right">-135.23</td>
+<td align="right">-84.49</td>
+<td align="right">-80.56</td>
+<td align="right">-67.81</td>
+<td align="right">-52.97</td>
+<td align="left">▁▃▁▇▅</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level1">
+<h1>Business Problem: “How can we predict the best turbine producing the
+highest power?”</h1>
+<div class="section level2">
+<h2>Exploratory Data Analysis</h2>
+<div class="section level3">
+<h3>Environmental Impact</h3>
+<pre class="r"><code># Calculate the total CO2 emission reduction achieved by the total_project_capacity_mw
+emission_factor_per_mw &lt;- 0.5  # Assuming emission factor of 0.5 metric tons CO2 per MW
+
+total_emission_reduction &lt;- sum(wind_turbine_cleaned$total_project_capacity_mw) * emission_factor_per_mw
+
+cat(&quot;The total CO2 emission reduction achieved is:&quot;, total_emission_reduction, &quot;metric tons per year.\n&quot;)</code></pre>
+<pre><code>## The total CO2 emission reduction achieved is: 426346.2 metric tons per year.</code></pre>
+<pre class="r"><code>df = wind_turbine_cleaned %&gt;% mutate(province_territory = fct_lump_n(province_territory, 3))
+
+prov.coord = df %&gt;%
+  group_by(province_territory) %&gt;% 
+  summarise(prov.lat = (mean(latitude) + 4),
+            prov.lon = (mean(longitude))) %&gt;%
+  slice(1:3) 
+
+rownames(prov.coord) = c(&quot;Alberta&quot;,&quot;Ontario&quot;,&quot;Quebec&quot;) # So we can add annotations of these provinces to the map
+
+canada = map_data(&quot;world&quot;, region = &quot;canada&quot;)
+
+canada %&gt;% 
+  ggplot(aes(x = long, y = lat))+
+  
+  geom_polygon(aes(group = group), fill = &quot;grey&quot;) +
+  
+  geom_density2d(df,mapping = aes(longitude,latitude),
+                 alpha = 0.4,
+                 size = 0.8,
+                 color = &quot;cyan3&quot;)+
+  
+  geom_hex(df,mapping = aes(longitude,latitude,
+                            fill = province_territory,
+                            alpha = (..count..)),
+           bins = 35)+
+  
+  geom_text(prov.coord,mapping = aes(prov.lon,prov.lat,
+                                     color = province_territory,
+                                     label = rownames(prov.coord)),
+            fontface = &quot;italic&quot;,
+            fontface = &quot;bold&quot;)+ # Adding an annotation for the main provinces
+  
+  scale_fill_brewer(palette = &quot;Dark2&quot;)+
+  scale_color_brewer(palette = &quot;Dark2&quot;)+
+  theme(legend.position = &quot;right&quot;, legend.text = element_text(size = 10))+
+  labs(title = &quot;Canadian Wind Turbines&quot;)+
+  guides(colour = FALSE)+
+  theme_classic()</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+</div>
+<div class="section level2">
+<h2>Manufacturer and Model Analysis</h2>
+<pre class="r"><code># Calculate the frequency of each manufacturer
+manufacturer_counts &lt;- table(wind_turbine_cleaned$manufacturer)
+
+# Sort the manufacturers by frequency in descending order
+sorted_manufacturers &lt;- sort(manufacturer_counts, decreasing = TRUE)
+
+# Determine the top 5 manufacturers
+top_5_manufacturers &lt;- head(names(sorted_manufacturers), 5)
+
+# Categorize the rest of the manufacturers as &quot;Others&quot;
+wind_turbine_cleaned$manufacturer_category &lt;- ifelse(wind_turbine_cleaned$manufacturer %in% top_5_manufacturers,
+                                                     wind_turbine_cleaned$manufacturer, &quot;Others&quot;)
+
+# Recalculate the frequency of each manufacturer category
+category_counts &lt;- table(wind_turbine_cleaned$manufacturer_category)
+
+# Create a data frame with the category frequencies
+category_df &lt;- data.frame(Category = names(category_counts), Frequency = as.numeric(category_counts))
+
+# Sort the data frame by frequency in descending order
+sorted_category_df &lt;- category_df[order(category_df$Frequency, decreasing = TRUE), ]
+
+# Create a pie chart to visualize the distribution
+colors &lt;- c(&quot;#FF8C00&quot;, &quot;#1E90FF&quot;, &quot;#32CD32&quot;, &quot;#FF69B4&quot;, &quot;#FFD700&quot;, &quot;grey&quot;)  
+
+# Custom colors for the pie chart
+explodes &lt;- rep(0.1, nrow(sorted_category_df))  # Explode each slice of the pie chart
+
+#Visualize the data
+ggplot(sorted_category_df, aes(x = &quot;&quot;, y = Frequency, fill = Category)) +
+  geom_bar(stat = &quot;identity&quot;, width = 1, color = &quot;white&quot;) +
+  coord_polar(&quot;y&quot;, start = 0) +
+  theme_void() +
+  theme(legend.position = &quot;right&quot;) +
+  scale_fill_manual(values = colors) +
+  geom_text(aes(label = paste0(Category, &quot; (&quot;, Frequency, &quot;)&quot;)), 
+            position = position_stack(vjust = 0.5), color = &quot;black&quot;, size = 4) +
+  labs(title = &quot;Distribution of Wind Turbines Used in Canada by Companies&quot;, fontface = &quot;bold&quot;)</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code># Calculate the total CO2 emission reduction per model
+total_emission_by_model &lt;- aggregate(total_project_capacity_mw ~ model, wind_turbine_cleaned, sum)
+
+# Calculate the total CO2 emission reduction across all models
+total_emission &lt;- sum(total_emission_by_model$total_project_capacity_mw)
+
+# Calculate the percentage contribution of CO2 reduction for each model
+total_emission_by_model$percentage &lt;- (total_emission_by_model$total_project_capacity_mw / total_emission) * 100
+
+# Display the results
+total_emission_by_model</code></pre>
+<pre><code>##           model total_project_capacity_mw   percentage
+## 1          100B                      0.90 1.055480e-04
+## 2          25xc                     40.00 4.691023e-03
+## 3      3.2 M114                   7164.75 8.402502e-01
+## 4     AN 150/30                      0.90 1.055480e-04
+## 5    AW-1500/77                   1350.00 1.583220e-01
+## 6   AW-3000/116                   3468.00 4.067117e-01
+## 7    AW116/3000                    300.00 3.518267e-02
+## 8       B23/150                      0.81 9.499322e-05
+## 9    DeWind 9.2                     50.00 5.863779e-03
+## 10         DW52                      2.10 2.462787e-04
+## 11         DW54                      0.90 1.055480e-04
+## 12   E-101/3000                  17710.00 2.076951e+00
+## 13   E-141/4200                     60.00 7.036535e-03
+## 14     E-40/600                     19.50 2.286874e-03
+## 15         E-44                      0.90 1.055480e-04
+## 16     E-48/800                     35.60 4.175011e-03
+## 17         E-53                      4.00 4.691023e-04
+## 18         E-70                  13296.80 1.559390e+00
+## 19      E-70 E4                   2504.70 2.937401e-01
+## 20    E-70/2000                     50.00 5.863779e-03
+## 21    E-70/2300                   3277.50 3.843707e-01
+## 22         E-72                   1700.00 1.993685e-01
+## 23      E-72 E4                   9585.00 1.124086e+00
+## 24         E-82                  47216.85 5.537383e+00
+## 25      E-82 E2                  11282.80 1.323197e+00
+## 26    E-82 E2.3                    339.00 3.975642e-02
+## 27    E-82/2000                   4996.00 5.859088e-01
+## 28    E-82/2300                   3151.10 3.695471e-01
+## 29    E-82/3000                   3468.00 4.067117e-01
+## 30         E-92                   4548.75 5.334573e-01
+## 31    E-92 2.35                   5782.90 6.781929e-01
+## 32    E-92/2300                     18.40 2.157871e-03
+## 33    E-92/2350                     61.10 7.165538e-03
+## 34    E-92/3000                     12.00 1.407307e-03
+## 35          E82                     60.00 7.036535e-03
+## 36       E82 E2                     67.80 7.951284e-03
+## 37     E82 E2.3                     67.80 7.951284e-03
+## 38     G90/2000                    946.40 1.109896e-01
+## 39    GE 1.5SLE                 136633.50 1.602377e+01
+## 40    GE 1.5XLE                   4542.00 5.326657e-01
+## 41   GE 1.6-100                  35104.42 4.116891e+00
+## 42  GE 1.6-82.5                     91.84 1.077059e-02
+## 43     GE 1.6MW                   2217.78 2.600914e-01
+## 44    GE 1.6XLE                   4840.00 5.676138e-01
+## 45   GE 1.7-103                    496.40 5.821560e-02
+## 46   GE 2.2-107                   2543.20 2.982553e-01
+## 47   GE 2.5-100                    160.00 1.876409e-02
+## 48  GE 2.75-103                   1553.80 1.822228e-01
+## 49  GE 2.75-120                   4654.00 5.458005e-01
+## 50  GE 2.85-103                   1440.00 1.688768e-01
+## 51   GE 3.2-103                   6265.00 7.347315e-01
+## 52   LTW77-1500                      1.50 1.759134e-04
+## 53         LW52                      0.75 8.795668e-05
+## 54     LW750-52                      0.90 1.055480e-04
+## 55         MM82                  46830.00 5.492015e+00
+## 56         MM92                  78562.60 9.213474e+00
+## 57     N60/1300                    325.00 3.811456e-02
+## 58     NM48/750                   6655.50 7.805276e-01
+## 59      PWE 650                      0.65 7.622913e-05
+## 60     S97/2100                    472.50 5.541271e-02
+## 61  SWT-2.3-101                    992.00 1.163374e-01
+## 62  SWT-2.3-113                    719.64 8.439620e-02
+## 63 SWT 2.21-101                     22.92 2.687956e-03
+## 64  SWT 2.3-101                 103525.82 1.214105e+01
+## 65  SWT 2.3-113                   5603.30 6.571303e-01
+## 66   SWT 2.3-93                   7686.68 9.014599e-01
+## 67  SWT 3.0-113                   4312.00 5.056923e-01
+## 68  SWT 3.2-113                  17153.96 2.011741e+00
+## 69      T600-48                      1.80 2.110960e-04
+## 70       TW 600                      0.60 7.036535e-05
+## 71         V100                  11717.43 1.374168e+00
+## 72     V100 1.8                  49600.80 5.816963e+00
+## 73    V100/1800                     90.00 1.055480e-02
+## 74    V100/2000                    141.84 1.663437e-02
+## 75    V110/2000                     18.00 2.110960e-03
+## 76    V117/3450                  14576.25 1.709438e+00
+## 77         V126                    836.25 9.807170e-02
+## 78    V136/3450                  26100.00 3.060893e+00
+## 79      V44/600                     55.34 6.490031e-03
+## 80          V47                    529.47 6.209390e-02
+## 81      V47/500                      0.50 5.863779e-05
+## 82      V47/660                  11233.00 1.317357e+00
+## 83          V62                     12.90 1.512855e-03
+## 84          V77                     25.50 2.990527e-03
+## 85          V80                  21085.20 2.472779e+00
+## 86     V80/1800                   9019.70 1.057791e+00
+## 87          V82                   9215.25 1.080724e+00
+## 88     V82/1650                  21290.25 2.496826e+00
+## 89          V90                  17443.50 2.045697e+00
+## 90     V90/1800                  30697.20 3.600032e+00
+## 91     V90/3000                  12950.40 1.518766e+00
+## 92        WM15S                      2.34 2.744249e-04</code></pre>
+<pre class="r"><code># Calculate the total CO2 emission reduction per model
+total_emission_by_model &lt;- aggregate(total_project_capacity_mw ~ model, wind_turbine_cleaned, sum)
+
+# Calculate the total CO2 emission reduction across all models
+total_emission &lt;- sum(total_emission_by_model$total_project_capacity_mw)
+
+# Calculate the percentage contribution of CO2 reduction for each model
+total_emission_by_model$percentage &lt;- (total_emission_by_model$total_project_capacity_mw / total_emission) * 100
+
+# Sort the results in descending order of percentage contribution
+total_emission_by_model &lt;- total_emission_by_model[order(-total_emission_by_model$percentage), ]
+
+# Display the results
+total_emission_by_model</code></pre>
+<pre><code>##           model total_project_capacity_mw   percentage
+## 39    GE 1.5SLE                 136633.50 1.602377e+01
+## 64  SWT 2.3-101                 103525.82 1.214105e+01
+## 56         MM92                  78562.60 9.213474e+00
+## 72     V100 1.8                  49600.80 5.816963e+00
+## 24         E-82                  47216.85 5.537383e+00
+## 55         MM82                  46830.00 5.492015e+00
+## 41   GE 1.6-100                  35104.42 4.116891e+00
+## 90     V90/1800                  30697.20 3.600032e+00
+## 78    V136/3450                  26100.00 3.060893e+00
+## 88     V82/1650                  21290.25 2.496826e+00
+## 85          V80                  21085.20 2.472779e+00
+## 12   E-101/3000                  17710.00 2.076951e+00
+## 89          V90                  17443.50 2.045697e+00
+## 68  SWT 3.2-113                  17153.96 2.011741e+00
+## 76    V117/3450                  14576.25 1.709438e+00
+## 18         E-70                  13296.80 1.559390e+00
+## 91     V90/3000                  12950.40 1.518766e+00
+## 71         V100                  11717.43 1.374168e+00
+## 25      E-82 E2                  11282.80 1.323197e+00
+## 82      V47/660                  11233.00 1.317357e+00
+## 23      E-72 E4                   9585.00 1.124086e+00
+## 87          V82                   9215.25 1.080724e+00
+## 86     V80/1800                   9019.70 1.057791e+00
+## 66   SWT 2.3-93                   7686.68 9.014599e-01
+## 3      3.2 M114                   7164.75 8.402502e-01
+## 58     NM48/750                   6655.50 7.805276e-01
+## 51   GE 3.2-103                   6265.00 7.347315e-01
+## 31    E-92 2.35                   5782.90 6.781929e-01
+## 65  SWT 2.3-113                   5603.30 6.571303e-01
+## 27    E-82/2000                   4996.00 5.859088e-01
+## 44    GE 1.6XLE                   4840.00 5.676138e-01
+## 49  GE 2.75-120                   4654.00 5.458005e-01
+## 30         E-92                   4548.75 5.334573e-01
+## 40    GE 1.5XLE                   4542.00 5.326657e-01
+## 67  SWT 3.0-113                   4312.00 5.056923e-01
+## 6   AW-3000/116                   3468.00 4.067117e-01
+## 29    E-82/3000                   3468.00 4.067117e-01
+## 21    E-70/2300                   3277.50 3.843707e-01
+## 28    E-82/2300                   3151.10 3.695471e-01
+## 46   GE 2.2-107                   2543.20 2.982553e-01
+## 19      E-70 E4                   2504.70 2.937401e-01
+## 43     GE 1.6MW                   2217.78 2.600914e-01
+## 22         E-72                   1700.00 1.993685e-01
+## 48  GE 2.75-103                   1553.80 1.822228e-01
+## 50  GE 2.85-103                   1440.00 1.688768e-01
+## 5    AW-1500/77                   1350.00 1.583220e-01
+## 61  SWT-2.3-101                    992.00 1.163374e-01
+## 38     G90/2000                    946.40 1.109896e-01
+## 77         V126                    836.25 9.807170e-02
+## 62  SWT-2.3-113                    719.64 8.439620e-02
+## 80          V47                    529.47 6.209390e-02
+## 45   GE 1.7-103                    496.40 5.821560e-02
+## 60     S97/2100                    472.50 5.541271e-02
+## 26    E-82 E2.3                    339.00 3.975642e-02
+## 57     N60/1300                    325.00 3.811456e-02
+## 7    AW116/3000                    300.00 3.518267e-02
+## 47   GE 2.5-100                    160.00 1.876409e-02
+## 74    V100/2000                    141.84 1.663437e-02
+## 42  GE 1.6-82.5                     91.84 1.077059e-02
+## 73    V100/1800                     90.00 1.055480e-02
+## 36       E82 E2                     67.80 7.951284e-03
+## 37     E82 E2.3                     67.80 7.951284e-03
+## 33    E-92/2350                     61.10 7.165538e-03
+## 13   E-141/4200                     60.00 7.036535e-03
+## 35          E82                     60.00 7.036535e-03
+## 79      V44/600                     55.34 6.490031e-03
+## 9    DeWind 9.2                     50.00 5.863779e-03
+## 20    E-70/2000                     50.00 5.863779e-03
+## 2          25xc                     40.00 4.691023e-03
+## 16     E-48/800                     35.60 4.175011e-03
+## 84          V77                     25.50 2.990527e-03
+## 63 SWT 2.21-101                     22.92 2.687956e-03
+## 14     E-40/600                     19.50 2.286874e-03
+## 32    E-92/2300                     18.40 2.157871e-03
+## 75    V110/2000                     18.00 2.110960e-03
+## 83          V62                     12.90 1.512855e-03
+## 34    E-92/3000                     12.00 1.407307e-03
+## 17         E-53                      4.00 4.691023e-04
+## 92        WM15S                      2.34 2.744249e-04
+## 10         DW52                      2.10 2.462787e-04
+## 69      T600-48                      1.80 2.110960e-04
+## 52   LTW77-1500                      1.50 1.759134e-04
+## 4     AN 150/30                      0.90 1.055480e-04
+## 11         DW54                      0.90 1.055480e-04
+## 15         E-44                      0.90 1.055480e-04
+## 54     LW750-52                      0.90 1.055480e-04
+## 1          100B                      0.90 1.055480e-04
+## 8       B23/150                      0.81 9.499322e-05
+## 53         LW52                      0.75 8.795668e-05
+## 59      PWE 650                      0.65 7.622913e-05
+## 70       TW 600                      0.60 7.036535e-05
+## 81      V47/500                      0.50 5.863779e-05</code></pre>
+<pre class="r"><code>#Visualize the data
+wind_turbine %&gt;%
+  filter(!is.na(turbine_rated_capacity_k_w) ) %&gt;%
+  mutate(commissioning_date = parse_number(commissioning_date)) %&gt;%
+  mutate(commissioning_date = as.numeric(commissioning_date))%&gt;%
+  ggplot(aes(x=commissioning_date,y=turbine_rated_capacity_k_w)  )+
+  geom_jitter(height = 250,width=.5,alpha=0.25,col=&quot;palegreen3&quot;)+
+  # geom_bin2d()+ 
+  geom_smooth(method = &quot;lm&quot;, se = FALSE, color = &quot;blue&quot;) +
+  theme_classic()+
+  theme(panel.grid.major = element_line(),
+        panel.grid.minor = element_line())+
+  #scale_fill_viridis_c(option=&quot;B&quot;,begin=.2,end=.8)
+  labs(title = &quot;Turbines Are Rated With Higher Capacities As Time Passes&quot;,x=&quot;Commisioning Date&quot;,y=&quot;Turbine Rated Capacity (kW)&quot;)</code></pre>
+<pre><code>## `geom_smooth()` using formula = &#39;y ~ x&#39;</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+<div class="section level2">
+<h2>Turbine Design</h2>
+<pre class="r"><code># Does the turbine power affected by rotor diameter?
+question_1 &lt;- wind_turbine_cleaned %&gt;% 
+  group_by(rotor_diameter_m) %&gt;%
+  summarise(avg_kw = mean(turbine_rated_capacity_k_w, na.rm = TRUE)) %&gt;% 
+  round(digits = 2) %&gt;% 
+  arrange(desc(avg_kw))
+
+#Viz for Question 1
+ggplot(question_1, 
+       aes (x = rotor_diameter_m, 
+            y = avg_kw)) + geom_point() + 
+  geom_smooth(method = &quot;lm&quot;, se = FALSE) + 
+  labs (title = &quot;Rotor Diameter vs Turbine Power&quot;, 
+        x = &quot;Rotor Diameter&quot;,
+        y = &quot;Turbine Power (kW)&quot;) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<pre><code>## `geom_smooth()` using formula = &#39;y ~ x&#39;</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code># Does the turbine power affected by hub height?
+question_2 &lt;- wind_turbine_cleaned %&gt;% 
+  group_by(hub_height_m) %&gt;%
+  summarise(avg_kw = mean(turbine_rated_capacity_k_w, na.rm = TRUE)) %&gt;% 
+  round(digits = 2) %&gt;% 
+  arrange(desc(avg_kw))
+
+#Viz for Question 2
+ggplot(question_2, 
+       aes (x = hub_height_m, 
+            y = avg_kw)) + geom_point() + 
+  geom_smooth(method = &quot;lm&quot;, se = FALSE) + 
+  labs (title = &quot;Hub Height vs Turbine Power&quot;, 
+        x = &quot;Hub Height (m)&quot;,
+        y = &quot;Turbine Power (kW)&quot;) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<pre><code>## `geom_smooth()` using formula = &#39;y ~ x&#39;</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+<div class="section level2">
+<h2>Geographical Distribution</h2>
+<pre class="r"><code>#How much the electrical power generated in the provinces?
+question_3 &lt;- rename(wind_turbine_cleaned, province = province_territory) %&gt;%
+  group_by(province) %&gt;%
+  summarise(electric_power = 
+              mean(turbine_rated_capacity_k_w, na.rm = TRUE)) %&gt;%
+  arrange(desc(electric_power))
+
+knitr::kable(question_3, align = &quot;cc&quot;)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="center">province</th>
+<th align="center">electric_power</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">New Brunswick</td>
+<td align="center">2628.992</td>
+</tr>
+<tr class="even">
+<td align="center">British Columbia</td>
+<td align="center">2456.164</td>
+</tr>
+<tr class="odd">
+<td align="center">Northwest Territories</td>
+<td align="center">2300.000</td>
+</tr>
+<tr class="even">
+<td align="center">Ontario</td>
+<td align="center">2036.720</td>
+</tr>
+<tr class="odd">
+<td align="center">Nova Scotia</td>
+<td align="center">2007.161</td>
+</tr>
+<tr class="even">
+<td align="center">Newfoundland and Labrador</td>
+<td align="center">1988.077</td>
+</tr>
+<tr class="odd">
+<td align="center">Prince Edward Island</td>
+<td align="center">1957.308</td>
+</tr>
+<tr class="even">
+<td align="center">Quebec</td>
+<td align="center">1943.797</td>
+</tr>
+<tr class="odd">
+<td align="center">Manitoba</td>
+<td align="center">1943.233</td>
+</tr>
+<tr class="even">
+<td align="center">Alberta</td>
+<td align="center">1642.278</td>
+</tr>
+<tr class="odd">
+<td align="center">Saskatchewan</td>
+<td align="center">1577.647</td>
+</tr>
+<tr class="even">
+<td align="center">Yukon</td>
+<td align="center">405.000</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>#Viz for Question 3
+ggplot(question_3, 
+       aes(x = province, y = electric_power, 
+           fill = province)) +
+  geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) + labs (title = &quot;Electrical Capacity according to Each Province&quot;, x = &quot;Province&quot;, y = &quot;Electrical Capacity (kW)&quot;) + theme(axis.text.x = element_text(angle = 45, hjust = 1))</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>#How many turbines in Canada?
+table_1 &lt;- rename(wind_turbine_cleaned, province = province_territory) %&gt;%
+  count(province, sort = TRUE)
+
+knitr::kable(table_1, align = &quot;cc&quot;)</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="center">province</th>
+<th align="center">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="center">Ontario</td>
+<td align="center">2443</td>
+</tr>
+<tr class="even">
+<td align="center">Quebec</td>
+<td align="center">1991</td>
+</tr>
+<tr class="odd">
+<td align="center">Alberta</td>
+<td align="center">900</td>
+</tr>
+<tr class="even">
+<td align="center">Nova Scotia</td>
+<td align="center">310</td>
+</tr>
+<tr class="odd">
+<td align="center">British Columbia</td>
+<td align="center">292</td>
+</tr>
+<tr class="even">
+<td align="center">Saskatchewan</td>
+<td align="center">153</td>
+</tr>
+<tr class="odd">
+<td align="center">Manitoba</td>
+<td align="center">133</td>
+</tr>
+<tr class="even">
+<td align="center">New Brunswick</td>
+<td align="center">119</td>
+</tr>
+<tr class="odd">
+<td align="center">Prince Edward Island</td>
+<td align="center">104</td>
+</tr>
+<tr class="even">
+<td align="center">Newfoundland and Labrador</td>
+<td align="center">26</td>
+</tr>
+<tr class="odd">
+<td align="center">Northwest Territories</td>
+<td align="center">4</td>
+</tr>
+<tr class="even">
+<td align="center">Yukon</td>
+<td align="center">2</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code># Which provinces has the most wind turbines?
+question_4 &lt;- wind_turbine_cleaned %&gt;% 
+  group_by(province_territory) %&gt;% 
+  count(turbine_identifier) %&gt;%
+  summarise(turbine_amount = sum(n)) %&gt;%
+  arrange(desc(turbine_amount))
+
+#Viz for Question 4
+ggplot(question_4, 
+       aes(x = province_territory, y = turbine_amount, fill = province_territory))+ geom_bar(stat = &quot;identity&quot;, position = &quot;dodge&quot;) + labs (title = &quot;Turbine Amount per Province&quot;, x = &quot;Province&quot;, y = &quot;Number of occurence&quot;) + theme(axis.text.x = element_text(angle = 60, hjust = 1)) + guides(fill = guide_legend(sort = TRUE, title = &quot;Province&quot;, title.position = &quot;top&quot;))</code></pre>
+<p><img src="javascript://" width="672"/></p>
+</div>
+<div class="section level2">
+<h2>Predictive Modelling</h2>
+<pre class="r"><code># Parse Number the commissioning date variable
+wind_turbine_cleaned &lt;- wind_turbine_cleaned %&gt;%
+  mutate(commissioning_year = parse_number(commissioning_date))
+
+# Filter the dataset to contain only turbine power below or equal 2500
+wind_turbine_filtered &lt;- wind_turbine_cleaned %&gt;% 
+  filter(turbine_rated_capacity_k_w &lt;= 2500)
+
+wind_turbine_filtered$commissioning_date = NULL
+
+# Set seed for reproducibility
+set.seed (345)
+
+#Split the dataset
+data_split &lt;- initial_split (wind_turbine_filtered)
+
+data_test &lt;- testing (data_split)
+data_training &lt;- training (data_split)
+
+# Setting up recipe
+data_recipe &lt;- recipe(turbine_rated_capacity_k_w ~ rotor_diameter_m
+                      + hub_height_m
+                      + commissioning_year
+                      + manufacturer 
+                      + model,
+                      data = data_training) %&gt;% 
+  step_other(model) %&gt;%
+  step_dummy(manufacturer) %&gt;%
+  step_nzv(all_numeric()) %&gt;%
+  step_normalize(all_numeric_predictors())
+
+# Setting up the model
+model_1 &lt;- rand_forest() %&gt;% set_engine(&quot;ranger&quot;) %&gt;%
+  set_mode(&quot;regression&quot;)
+
+# Setting up the workflow
+wf_1 &lt;- workflow() %&gt;%
+  add_recipe(data_recipe) %&gt;%
+  add_model(model_1)
+
+# Run the workflow using fit ()
+trained_model &lt;- wf_1 %&gt;% fit(data = data_training)
+
+# Present the results using augment
+fit_test_1 &lt;- trained_model %&gt;% augment(new_data = data_training)
+
+# Present the results using ggplot
+ggplot(data = fit_test_1, aes(x = turbine_rated_capacity_k_w, y = .pred)) +
+  geom_abline(slope = 1, lty = 2, color = &quot;gray30&quot;, alpha = 0.7) +
+  geom_point(color = &quot;navy&quot;, alpha = 0.2) + 
+  labs(x = &quot;Actual Value (kW)&quot;, y = &quot;Predicted Value (kW)&quot;, title = &quot;Actual vs Predicted Value for Turbine Capacity (kW) for Data Training&quot;) + theme_classic()</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>#Evaluate the predictive model
+fit_test_2 &lt;- trained_model %&gt;% augment(new_data = data_test)
+
+# Present the results using ggplot
+ggplot(data = fit_test_2, aes(x = turbine_rated_capacity_k_w, y = .pred)) +
+  geom_abline(slope = 1, lty = 2, color = &quot;gray30&quot;, alpha = 0.7) +
+  geom_point(color = &quot;gold4&quot;, alpha = 0.2) + 
+  labs(x = &quot;Actual Value (kW)&quot;, y = &quot;Predicted Value (kW)&quot;, title = &quot;Actual vs Predicted Value for Turbine Capacity (kW) for Data Testing&quot;) + theme_classic()</code></pre>
+<p><img src="javascript://" width="672"/></p>
+<pre class="r"><code>#Choose the model evaluation metrics
+metrics_chosen &lt;- metric_set(rmse, mae, rsq)
+
+#Calculate the metrics from fit_test_1 and fit_test_2
+train_eval_res &lt;- fit_test_1 %&gt;% metrics_chosen(
+  truth = turbine_rated_capacity_k_w, estimate = .pred)
+
+mod_eval_res &lt;- fit_test_2 %&gt;% metrics_chosen(
+  truth = turbine_rated_capacity_k_w, estimate = .pred)
+
+# Print the evaluation results
+print(train_eval_res)</code></pre>
+<pre><code>## # A tibble: 3 &#215; 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 rmse    standard      58.9  
+## 2 mae     standard      33.5  
+## 3 rsq     standard       0.981</code></pre>
+<pre class="r"><code>print(mod_eval_res)</code></pre>
+<pre><code>## # A tibble: 3 &#215; 3
+##   .metric .estimator .estimate
+##   &lt;chr&gt;   &lt;chr&gt;          &lt;dbl&gt;
+## 1 rmse    standard      61.4  
+## 2 mae     standard      35.3  
+## 3 rsq     standard       0.980</code></pre>
+</div>
+</div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script type="module" src="https://s.brightspace.com/lib/bsi/2024.8.194/unbundled/mathjax.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+						if (document.querySelector('math') || /\$\$|\\\(|\\\[|\\begin{|\\ref{|\\eqref{/.test(document.body.innerHTML)) {
+							document.querySelectorAll('mspace[linebreak="newline"]').forEach(elm => {
+								elm.setAttribute('style', 'display: block; height: 0.5rem;');
+							});
+
+							window.D2L.MathJax.loadMathJax({
+								outputScale: 1.5,
+								renderLatex: true,
+								enableMML3Support: false
+							});
+						}
+					});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2024.8.194/unbundled/prism.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					document.querySelectorAll('.d2l-code').forEach(code => {
+						window.D2L.Prism.formatCodeElement(code);
+					});
+				});</script><script type="module" src="https://s.brightspace.com/lib/bsi/2024.8.194/unbundled/embeds.js"></script><script type="text/javascript">document.addEventListener('DOMContentLoaded', function() {
+					window.D2L.EmbedRenderer.renderEmbeds(document.body);
+				});</script></body></html>

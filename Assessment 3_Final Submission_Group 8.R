@@ -1,0 +1,325 @@
+# Load the libraries and the dataset
+library (tidyverse)
+library (tidymodels)
+library (janitor)
+library (dplyr)
+library (knitr)
+library (ggplot2)
+library (caret)
+library (parsnip)
+library (tune)
+
+wind_turbine <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-10-27/wind-turbine.csv')
+
+
+# Check whether any missing values observed in the dataset
+
+skimr::skim(wind_turbine)
+
+#Missing values are observed in the dataset, even almost all observations in the notes column are missing values. We need to clean it :)
+
+
+# Clean the dataset
+
+#Remove the notes column from the dataset and missing values in other column
+wind_turbine_cleaned <- 
+  wind_turbine [, !(names(wind_turbine) == "notes")] %>%
+  na.omit()
+
+skimr::skim(wind_turbine_cleaned)
+
+# Business Problem: "How can we predict the best turbine producing the highest power?"
+
+## Exploratory Data Analysis
+### Environmental Impact
+
+# Calculate the total CO2 emission reduction achieved by the total_project_capacity_mw
+emission_factor_per_mw <- 0.5  # Assuming emission factor of 0.5 metric tons CO2 per MW
+
+total_emission_reduction <- sum(wind_turbine_cleaned$total_project_capacity_mw) * emission_factor_per_mw
+
+cat("The total CO2 emission reduction achieved is:", total_emission_reduction, "metric tons per year.\n")
+df = wind_turbine_cleaned %>% mutate(province_territory = fct_lump_n(province_territory, 3))
+
+prov.coord = df %>%
+  group_by(province_territory) %>% 
+  summarise(prov.lat = (mean(latitude) + 4),
+            prov.lon = (mean(longitude))) %>%
+  slice(1:3) 
+
+rownames(prov.coord) = c("Alberta","Ontario","Quebec") # So we can add annotations of these provinces to the map
+
+canada = map_data("world", region = "canada")
+
+canada %>% 
+  ggplot(aes(x = long, y = lat))+
+  
+  geom_polygon(aes(group = group), fill = "grey") +
+  
+  geom_density2d(df,mapping = aes(longitude,latitude),
+                 alpha = 0.4,
+                 size = 0.8,
+                 color = "cyan3")+
+  
+  geom_hex(df,mapping = aes(longitude,latitude,
+                            fill = province_territory,
+                            alpha = (..count..)),
+           bins = 35)+
+  
+  geom_text(prov.coord,mapping = aes(prov.lon,prov.lat,
+                                     color = province_territory,
+                                     label = rownames(prov.coord)),
+            fontface = "italic",
+            fontface = "bold")+ # Adding an annotation for the main provinces
+  
+  scale_fill_brewer(palette = "Dark2")+
+  scale_color_brewer(palette = "Dark2")+
+  theme(legend.position = "right", legend.text = element_text(size = 10))+
+  labs(title = "Canadian Wind Turbines")+
+  guides(colour = FALSE)+
+  theme_classic()
+
+
+## Manufacturer and Model Analysis
+
+
+# Calculate the frequency of each manufacturer
+manufacturer_counts <- table(wind_turbine_cleaned$manufacturer)
+
+# Sort the manufacturers by frequency in descending order
+sorted_manufacturers <- sort(manufacturer_counts, decreasing = TRUE)
+
+# Determine the top 5 manufacturers
+top_5_manufacturers <- head(names(sorted_manufacturers), 5)
+
+# Categorize the rest of the manufacturers as "Others"
+wind_turbine_cleaned$manufacturer_category <- ifelse(wind_turbine_cleaned$manufacturer %in% top_5_manufacturers,
+                                                     wind_turbine_cleaned$manufacturer, "Others")
+
+# Recalculate the frequency of each manufacturer category
+category_counts <- table(wind_turbine_cleaned$manufacturer_category)
+
+# Create a data frame with the category frequencies
+category_df <- data.frame(Category = names(category_counts), Frequency = as.numeric(category_counts))
+
+# Sort the data frame by frequency in descending order
+sorted_category_df <- category_df[order(category_df$Frequency, decreasing = TRUE), ]
+
+# Create a pie chart to visualize the distribution
+colors <- c("#FF8C00", "#1E90FF", "#32CD32", "#FF69B4", "#FFD700", "grey")  
+
+# Custom colors for the pie chart
+explodes <- rep(0.1, nrow(sorted_category_df))  # Explode each slice of the pie chart
+
+#Visualize the data
+ggplot(sorted_category_df, aes(x = "", y = Frequency, fill = Category)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar("y", start = 0) +
+  theme_void() +
+  theme(legend.position = "right") +
+  scale_fill_manual(values = colors) +
+  geom_text(aes(label = paste0(Category, " (", Frequency, ")")), 
+            position = position_stack(vjust = 0.5), color = "black", size = 4) +
+  labs(title = "Distribution of Wind Turbines Used in Canada by Companies", fontface = "bold")
+
+
+# Calculate the total CO2 emission reduction per model
+total_emission_by_model <- aggregate(total_project_capacity_mw ~ model, wind_turbine_cleaned, sum)
+
+# Calculate the total CO2 emission reduction across all models
+total_emission <- sum(total_emission_by_model$total_project_capacity_mw)
+
+# Calculate the percentage contribution of CO2 reduction for each model
+total_emission_by_model$percentage <- (total_emission_by_model$total_project_capacity_mw / total_emission) * 100
+
+# Display the results
+total_emission_by_model
+
+# Calculate the total CO2 emission reduction per model
+total_emission_by_model <- aggregate(total_project_capacity_mw ~ model, wind_turbine_cleaned, sum)
+
+# Calculate the total CO2 emission reduction across all models
+total_emission <- sum(total_emission_by_model$total_project_capacity_mw)
+
+# Calculate the percentage contribution of CO2 reduction for each model
+total_emission_by_model$percentage <- (total_emission_by_model$total_project_capacity_mw / total_emission) * 100
+
+# Sort the results in descending order of percentage contribution
+total_emission_by_model <- total_emission_by_model[order(-total_emission_by_model$percentage), ]
+
+# Display the results
+total_emission_by_model
+
+#Visualize the data
+wind_turbine %>%
+  filter(!is.na(turbine_rated_capacity_k_w) ) %>%
+  mutate(commissioning_date = parse_number(commissioning_date)) %>%
+  mutate(commissioning_date = as.numeric(commissioning_date))%>%
+  ggplot(aes(x=commissioning_date,y=turbine_rated_capacity_k_w)  )+
+  geom_jitter(height = 250,width=.5,alpha=0.25,col="palegreen3")+
+  # geom_bin2d()+ 
+  geom_smooth(method = "lm", se = FALSE, color = "blue") +
+  theme_classic()+
+  theme(panel.grid.major = element_line(),
+        panel.grid.minor = element_line())+
+  #scale_fill_viridis_c(option="B",begin=.2,end=.8)
+  labs(title = "Turbines Are Rated With Higher Capacities As Time Passes",
+       x="Commisioning Date",y="Turbine Rated Capacity (kW)")
+
+
+## Turbine Design
+
+# Does the turbine power affected by rotor diameter?
+question_1 <- wind_turbine_cleaned %>% 
+  group_by(rotor_diameter_m) %>%
+  summarise(avg_kw = mean(turbine_rated_capacity_k_w, na.rm = TRUE)) %>% 
+  round(digits = 2) %>% 
+  arrange(desc(avg_kw))
+
+#Viz for Question 1
+ggplot(question_1, 
+       aes (x = rotor_diameter_m, 
+            y = avg_kw)) + geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  labs (title = "Rotor Diameter vs Turbine Power", 
+        x = "Rotor Diameter",
+        y = "Turbine Power (kW)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Does the turbine power affected by hub height?
+question_2 <- wind_turbine_cleaned %>% 
+  group_by(hub_height_m) %>%
+  summarise(avg_kw = mean(turbine_rated_capacity_k_w, na.rm = TRUE)) %>% 
+  round(digits = 2) %>% 
+  arrange(desc(avg_kw))
+
+#Viz for Question 2
+ggplot(question_2, 
+       aes (x = hub_height_m, 
+            y = avg_kw)) + geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  labs (title = "Hub Height vs Turbine Power", 
+        x = "Hub Height (m)",
+        y = "Turbine Power (kW)") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+## Geographical Distribution
+
+#How much the electrical power generated in the provinces?
+question_3 <- rename(wind_turbine_cleaned, province = province_territory) %>%
+  group_by(province) %>%
+  summarise(electric_power = 
+              mean(turbine_rated_capacity_k_w, na.rm = TRUE)) %>%
+  arrange(desc(electric_power))
+
+knitr::kable(question_3, align = "cc")
+
+#Viz for Question 3
+ggplot(question_3, 
+       aes(x = province, y = electric_power, 
+           fill = province)) +
+  geom_bar(stat = "identity", position = "dodge") + 
+  labs (title = "Electrical Capacity according to Each Province", x = "Province", y = "Electrical Capacity (kW)") + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+#How many turbines in Canada?
+table_1 <- rename(wind_turbine_cleaned, province = province_territory) %>%
+  count(province, sort = TRUE)
+
+knitr::kable(table_1, align = "cc")
+
+# Which provinces has the most wind turbines?
+question_4 <- wind_turbine_cleaned %>% 
+  group_by(province_territory) %>% 
+  count(turbine_identifier) %>%
+  summarise(turbine_amount = sum(n)) %>%
+  arrange(desc(turbine_amount))
+
+#Viz for Question 4
+ggplot(question_4, 
+       aes(x = province_territory, y = turbine_amount, 
+           fill = province_territory))+ geom_bar(stat = "identity", position = "dodge") + 
+  labs (title = "Turbine Amount per Province", x = "Province", y = "Number of occurence") + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  guides(fill = guide_legend(sort = TRUE, title = "Province", title.position = "top"))
+
+
+## Predictive Modelling
+
+# Parse Number the commissioning date variable
+wind_turbine_cleaned <- wind_turbine_cleaned %>%
+  mutate(commissioning_year = parse_number(commissioning_date))
+
+# Filter the dataset to contain only turbine power below or equal 2500
+wind_turbine_filtered <- wind_turbine_cleaned %>% 
+  filter(turbine_rated_capacity_k_w <= 2500)
+
+wind_turbine_filtered$commissioning_date = NULL
+
+# Set seed for reproducibility
+set.seed (345)
+
+#Split the dataset
+data_split <- initial_split (wind_turbine_filtered)
+
+data_test <- testing (data_split)
+data_training <- training (data_split)
+
+# Setting up recipe
+data_recipe <- recipe(turbine_rated_capacity_k_w ~ rotor_diameter_m
+                      + hub_height_m
+                      + commissioning_year
+                      + manufacturer 
+                      + model,
+                      data = data_training) %>% 
+  step_other(model) %>%
+  step_dummy(manufacturer) %>%
+  step_nzv(all_numeric()) %>%
+  step_normalize(all_numeric_predictors())
+
+# Setting up the model
+model_1 <- rand_forest() %>% set_engine("ranger") %>%
+  set_mode("regression")
+
+# Setting up the workflow
+wf_1 <- workflow() %>%
+  add_recipe(data_recipe) %>%
+  add_model(model_1)
+
+# Run the workflow using fit ()
+trained_model <- wf_1 %>% fit(data = data_training)
+
+# Present the results using augment
+fit_test_1 <- trained_model %>% augment(new_data = data_training)
+
+# Present the results using ggplot
+ggplot(data = fit_test_1, aes(x = turbine_rated_capacity_k_w, y = .pred)) +
+  geom_abline(slope = 1, lty = 2, color = "gray30", alpha = 0.7) +
+  geom_point(color = "navy", alpha = 0.2) + 
+  labs(x = "Actual Value (kW)", y = "Predicted Value (kW)", title = "Actual vs Predicted Value for Turbine Capacity (kW) for Data Training") + theme_classic()
+
+
+#Evaluate the predictive model
+fit_test_2 <- trained_model %>% augment(new_data = data_test)
+
+# Present the results using ggplot
+ggplot(data = fit_test_2, aes(x = turbine_rated_capacity_k_w, y = .pred)) +
+  geom_abline(slope = 1, lty = 2, color = "gray30", alpha = 0.7) +
+  geom_point(color = "gold4", alpha = 0.2) + 
+  labs(x = "Actual Value (kW)", y = "Predicted Value (kW)", title = "Actual vs Predicted Value for Turbine Capacity (kW) for Data Testing") + theme_classic()
+
+#Choose the model evaluation metrics
+metrics_chosen <- metric_set(rmse, mae, rsq)
+
+#Calculate the metrics from fit_test_1 and fit_test_2
+train_eval_res <- fit_test_1 %>% metrics_chosen(
+  truth = turbine_rated_capacity_k_w, estimate = .pred)
+
+mod_eval_res <- fit_test_2 %>% metrics_chosen(
+  truth = turbine_rated_capacity_k_w, estimate = .pred)
+
+# Print the evaluation results
+print(train_eval_res)
+print(mod_eval_res)
